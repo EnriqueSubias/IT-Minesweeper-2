@@ -3,6 +3,7 @@ window.addEventListener("load", () => {
     minesweeper.init();
 });
 
+
 const minesweeper = { // Avoids polluting the global namespace
 
     gameTypes: [
@@ -48,6 +49,7 @@ const minesweeper = { // Avoids polluting the global namespace
 
         buttonSmall.addEventListener('click', () => {
             this.newGame("small");
+            this.logic.init(this.size, this.mines)
         });
 
         const buttonMedium = this.buildButton('button', 'game-medium', 'Medium');
@@ -55,6 +57,7 @@ const minesweeper = { // Avoids polluting the global namespace
 
         buttonMedium.addEventListener('click', () => {
             this.newGame('medium');
+            this.logic.init(this.size, this.mines)
         });
 
         const buttonLarge = this.buildButton('button', 'game-large', 'Large');
@@ -62,7 +65,12 @@ const minesweeper = { // Avoids polluting the global namespace
 
         buttonLarge.addEventListener('click', () => {
             this.newGame('large');
+            this.logic.init(this.size, this.mines)
         });
+
+        // // Default game on first load
+        this.newGame("small");
+        this.logic.init(this.size, this.mines)
 
         return divButtons;
     },
@@ -103,14 +111,19 @@ const minesweeper = { // Avoids polluting the global namespace
                 console.log(this.gameTypes[game])
             }
         }
-        // return this.gameTypes.find((gameType) => gameType.name === size);
     },
 
     // Starts a new game
     newGame: function (size) {
         this.generatePlayfield(size);
+        // Left click uncovers a cell
+        // Right click flags a cell (doesnt affect game logic because it's just a visual aid)
 
+        // The program handles all clicks in a single callback per click type (Because each cell has data-x and data-y coordinates).
+
+        // Left click and right click have different functions so the program handles them in separate callbacks.
     },
+
 
     // Starts a new game and then initializes the playfield with the given size
     generatePlayfield: function (size) {
@@ -142,16 +155,44 @@ const minesweeper = { // Avoids polluting the global namespace
         cell.dataset.y = row;
 
         const style = `calc((100% / ${this.size}) - (2 * var(--shadowsize)))`;
-
         cell.style.width = style;
         cell.style.height = style;
+
+        cell.addEventListener('click', (event) => {
+            this.cellClick(event);
+        });
+
+        cell.addEventListener('contextmenu', (event) => {
+            this.cellRightClick(event);
+        });
+
 
         return cell;
     },
 
+    cellClick: function (event) {
+        // console.dir(event);
+        const x = event.target.dataset.x;
+        const y = event.target.dataset.y;
+        event.preventDefault(); // Prevents this trigger from also triggering the right click event
 
+        console.log('Left click on cell ' + x + ',' + y + ' detected');
+    },
+
+    cellRightClick: function (event) {
+        // console.dir(event);
+        const x = event.target.dataset.x;
+        const y = event.target.dataset.y;
+        event.preventDefault(); // Prevents this trigger from also triggering the right click event
+
+        console.log('Right click on cell ' + x + ',' + y + ' detected');
+
+    },
 
     init: function () {
+
+        this.logic = localLogic; // Sets the game logic to the local game logic object
+
         const body = document.querySelector('body'); // Finds the body element
 
         // Creates the main content div
@@ -174,6 +215,23 @@ const minesweeper = { // Avoids polluting the global namespace
         // footer
         const footer = this.buildFooter();
         content.appendChild(footer);
-
     }
 }
+
+
+const localLogic = {
+    // Minesweeper local game logic
+
+    init: function (size, numberOfMines) {
+        console.log('Local game logic initialized with a size of ' + size + ' x ' + size + ' and ' + numberOfMines + ' mines');
+
+        this.size = size;
+        this.numberOfMines = numberOfMines;
+
+    }
+
+    // Make the field where the gama logic stores the mines in
+
+
+}
+
