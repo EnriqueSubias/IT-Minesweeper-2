@@ -177,6 +177,8 @@ const minesweeper = { // Avoids polluting the global namespace
         event.preventDefault(); // Prevents this trigger from also triggering the right click event
 
         console.log('Left click on cell ' + x + ',' + y + ' detected');
+
+        this.logic.sweep(x, y);
     },
 
     cellRightClick: function (event) {
@@ -222,16 +224,105 @@ const minesweeper = { // Avoids polluting the global namespace
 const localLogic = {
     // Minesweeper local game logic
 
+    sweep: function (x, y) {
+        // This function sweeps the field for mines
+        // It returns the number of mines in the surrounding cells
+        // It also returns the number of covered cells in the surrounding cells
+        // It also returns the number of flagged cells in the surrounding cells
+        // This function is called when a cell is uncovered
+
+        console.log(this.movesCounter + ' moves made');
+
+        if (this.movesCounter === 0) {
+            this.placeMines(x, y);
+        }
+
+
+        // if (this.firstClick) {
+        //     this.firstClick = false;
+        //     this.initMines(x, y);
+        // }
+
+        this.movesCounter++;
+    },
+
+    placeMines: function (x, y) {
+        // This function places the mines on the field
+        // It takes the coordinates of the first click as parameters
+        // It places the mines in a way that the first click is always safe
+
+        // Infinite loop that breaks when all mines are placed
+        this.minesLeft = this.numberOfMines;
+        while (true) {
+            const tryX = Math.floor(Math.random() * this.size);
+            const tryY = Math.floor(Math.random() * this.size);
+
+            if (tryX === x && tryY === y) {
+                continue; // If the coordinates are the same as the first click, try again
+            }
+
+            if (this.field[tryX][tryY] === true) {
+                continue; // If there is already a mine there, try again
+            }
+
+            this.field[tryX][tryY] = true; // Place a mine
+            this.minesLeft--; // Decrease the number of mines left
+
+            if (this.minesLeft === 0) {
+                break; // If all mines are placed, break the loop
+            }
+        }
+
+        
+        
+        // // Loop through the mines
+        // for (let i = 0; i < this.numberOfMines; i++) {
+        //     // Generate random coordinates
+        //     let randomX = Math.floor(Math.random() * this.size);
+        //     let randomY = Math.floor(Math.random() * this.size);
+
+        //     // Check if the coordinates are the same as the first click
+        //     if (randomX === x && randomY === y) {
+        //         // If they are, generate new coordinates
+        //         randomX = Math.floor(Math.random() * this.size);
+        //         randomY = Math.floor(Math.random() * this.size);
+        //     }
+
+        //     // Check if the coordinates are already occupied
+        //     if (this.field[randomX][randomY] === true) {
+        //         // If they are, generate new coordinates
+        //         randomX = Math.floor(Math.random() * this.size);
+        //         randomY = Math.floor(Math.random() * this.size);
+        //     }
+
+        //     // Place the mine
+        //     this.field[randomX][randomY] = true;
+        // }
+
+        console.dir(this.field);
+
+    },
+
     init: function (size, numberOfMines) {
         console.log('Local game logic initialized with a size of ' + size + ' x ' + size + ' and ' + numberOfMines + ' mines');
 
         this.size = size;
         this.numberOfMines = numberOfMines;
 
+        // This field is where the game logic object stores the mines in:
+        this.field = new Array(this.size);
+        for (let i = 0; i < this.size; i++) {
+            this.field[i] = new Array(this.size);
+            for (let j = 0; j < this.size; j++) {
+                this.field[i][j] = false; // False means no mine
+            }
+        }
+
+        console.dir(this.field);
+
+        // Delay the initialization of the mines until the first click
+
+        // Initialize the move counter
+        this.movesCounter = 0;
     }
-
-    // Make the field where the gama logic stores the mines in
-
-
 }
-
