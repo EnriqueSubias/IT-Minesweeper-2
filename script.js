@@ -202,8 +202,11 @@ const minesweeper = { // Avoids polluting the global namespace
         cell.className = cell.className.replace('covered', '');
         cell.className += ' uncovered';
 
-        if (result.mine === true) {
+        if (result.mineHit === true) {
             cell.className += ' cell-symbol-bomb';
+        }
+        if (result.mineHit === false) {
+            cell.className += ' cell-symbol-' + result.minesAround;
         }
     },
 
@@ -247,6 +250,9 @@ const localLogic = {
         // It also returns the number of covered cells in the surrounding cells
         // It also returns the number of flagged cells in the surrounding cells
         // This function is called when a cell is uncovered
+        
+        x = parseInt(x);
+        y = parseInt(y);
 
         console.log(this.movesCounter + ' moves made');
 
@@ -269,16 +275,45 @@ const localLogic = {
 
 
         if (this.field[x][y] === true) {
-            const result = new Object({
-                mine: true
-            });
-            return result;
+            return { mineHit: true };
 
         } else if (this.field[x][y] === false) {
-            const result = new Object({
-                mine: false
-            });
-            return result;
+            return { mineHit: false, minesAround: this.minesAround(x, y) };
+        }
+
+    },
+
+    minesAround: function (x, y) {
+        // This function returns the number of mines around a cell
+        // It takes the coordinates of the cell as parameters
+
+        // Checks for mines in the surrounding cells of the cell
+
+        
+
+        let mines = 0;
+
+        for (let delX = -1; delX <= 1; delX++) {
+            for (let delY = -1; delY <= 1; delY++) {
+
+                if (this.cellOutsideField(x + delX, y + delY)) {
+                    continue; // If the cell is outside the field, skip it
+                }
+
+                if (this.field[x + delX][y + delY] === true) {
+                    mines++; // If there is a mine, increase the number of mines
+                }
+            }
+        }
+        return mines;
+
+    },
+
+    cellOutsideField: function (x, y) {
+        if (x < 0 || x >= this.size || y < 0 || y >= this.size) {
+            return true; // If the cell is outside the field, return true
+        } else {
+            return false; // If the cell is inside the field, return false
         }
     },
 
