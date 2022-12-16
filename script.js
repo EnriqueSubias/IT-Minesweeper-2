@@ -178,7 +178,11 @@ const minesweeper = { // Avoids polluting the global namespace
 
         console.log('Left click on cell ' + x + ',' + y + ' detected');
 
-        this.logic.sweep(x, y);
+        const result = this.logic.sweep(x, y);
+        console.dir(result);
+
+        this.placeSymbol(result, x, y);
+
     },
 
     cellRightClick: function (event) {
@@ -190,6 +194,19 @@ const minesweeper = { // Avoids polluting the global namespace
         console.log('Right click on cell ' + x + ',' + y + ' detected');
 
     },
+
+    placeSymbol: function (result, x, y) {
+        const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+        cell.className = 'cell';
+        // remove class covered
+        cell.className = cell.className.replace('covered', '');
+        cell.className += ' uncovered';
+
+        if (result.mine === true) {
+            cell.className += ' cell-symbol-bomb';
+        }
+    },
+
 
     init: function () {
 
@@ -237,11 +254,63 @@ const localLogic = {
             this.placeMines(x, y);
         }
 
+        // RETURN VALUES
+        // The game object should return:
+        // • whether the sweep hits a mine
+        //      -   if mine: list of all mines
+        // • if the user has won the game
+        // • the number of mines around
+        //      -   if no other mines around: a list of empty cells
 
-        // if (this.firstClick) {
-        //     this.firstClick = false;
-        //     this.initMines(x, y);
+
+        if (this.field[x][y] === true) {
+            const result = new Object({
+                mine: true
+            });
+            return result;
+
+        } else if (this.field[x][y] === false) {
+            const result = new Object({
+                mine: false
+            });
+            return result;
+        }
+
+        // // If the cell is already uncovered, do nothing
+        // if (this.field[x][y] === 'uncovered') {
+        //     return;
         // }
+
+        // // If the cell is flagged, do nothing
+        // if (this.field[x][y] === 'flagged') {
+        //     return;
+        // }
+
+        // // If the cell is a mine, uncover all mines and end the game
+        // if (this.field[x][y] === true) {
+        //     this.uncoverAllMines();
+        //     this.gameOver();
+        //     return;
+        // }
+
+
+        // // If the cell is empty, uncover it and all empty cells around it
+        // if (this.field[x][y] === false) {
+        //     this.uncoverEmptyCells(x, y);
+        // }
+
+        // // If the cell is a number, uncover it
+        // if (typeof this.field[x][y] === 'number') {
+        //     this.uncoverCell(x, y);
+        // }
+
+
+        // // If the user has uncovered all cells that are not mines, the user has won the game
+        // if (this.uncoveredCells === this.size * this.size - this.numberOfMines) {
+        //     this.gameWon();
+        // }
+
+
 
         this.movesCounter++;
     },
@@ -273,33 +342,7 @@ const localLogic = {
             }
         }
 
-        
-        
-        // // Loop through the mines
-        // for (let i = 0; i < this.numberOfMines; i++) {
-        //     // Generate random coordinates
-        //     let randomX = Math.floor(Math.random() * this.size);
-        //     let randomY = Math.floor(Math.random() * this.size);
-
-        //     // Check if the coordinates are the same as the first click
-        //     if (randomX === x && randomY === y) {
-        //         // If they are, generate new coordinates
-        //         randomX = Math.floor(Math.random() * this.size);
-        //         randomY = Math.floor(Math.random() * this.size);
-        //     }
-
-        //     // Check if the coordinates are already occupied
-        //     if (this.field[randomX][randomY] === true) {
-        //         // If they are, generate new coordinates
-        //         randomX = Math.floor(Math.random() * this.size);
-        //         randomY = Math.floor(Math.random() * this.size);
-        //     }
-
-        //     // Place the mine
-        //     this.field[randomX][randomY] = true;
-        // }
-
-        console.dir(this.field);
+        console.dir(this.field); // TODO: Remove this line for production
 
     },
 
