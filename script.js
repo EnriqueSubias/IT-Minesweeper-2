@@ -182,6 +182,33 @@ const minesweeper = { // Avoids polluting the global namespace
         console.dir(result);
 
         this.placeSymbol(result, x, y);
+    },
+
+    placeSymbol: function (result, x, y) {
+        const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+        cell.className = 'cell';
+
+        // remove class covered
+        cell.className = cell.className.replace('covered', '');
+        cell.className += ' uncovered';
+
+        if (result.mineHit === true) {
+            cell.className += ' cell-symbol-bomb';
+        }
+        if (result.mineHit === false) {
+            if (result.cellsAround === undefined) {
+                cell.className += ' cell-symbol-' + result.minesAround;
+            } else {
+                for (let i = 0; i < result.cellsAround.length; i++) {
+                    const cell = document.querySelector(`[data-x="${result.cellsAround[i].x}"][data-y="${result.cellsAround[i].y}"]`);
+                    cell.className = 'cell';
+                    // remove class covered
+                    cell.className = cell.className.replace('covered', '');
+                    cell.className += ' uncovered';
+                    cell.className += ' cell-symbol-' + result.cellsAround[i].minesAround;
+                }
+            }
+        }
 
     },
 
@@ -193,23 +220,30 @@ const minesweeper = { // Avoids polluting the global namespace
 
         console.log('Right click on cell ' + x + ',' + y + ' detected');
 
+        this.placeFlag(x, y);
     },
 
-    placeSymbol: function (result, x, y) {
+    placeFlag: function (x, y) {
         const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
         cell.className = 'cell';
-        // remove class covered
-        cell.className = cell.className.replace('covered', '');
-        cell.className += ' uncovered';
 
-        if (result.mineHit === true) {
-            cell.className += ' cell-symbol-bomb';
+        //if (cell.className.includes('covered') === true) {
+        if (cell.className.includes('cell-symbol-flag') === false) {
+            cell.className += ' covered';
+            cell.className += ' cell-symbol-flag';
+            return;
+
+        } else { // Removes the flag if already flagged
+            cell.className += ' covered';
+            cell.className = cell.className.replace('cell-symbol-flag', '');
+            return;
         }
-        if (result.mineHit === false) {
-            cell.className += ' cell-symbol-' + result.minesAround;
-        }
+
+        // } else {
+        //     console.log('Cell is already uncovered, cannot flag it')
+        //     return; // The cell has to be covered to be flagged
+        // }
     },
-
 
     init: function () {
 
@@ -250,7 +284,7 @@ const localLogic = {
         // It also returns the number of covered cells in the surrounding cells
         // It also returns the number of flagged cells in the surrounding cells
         // This function is called when a cell is uncovered
-        
+
         x = parseInt(x);
         y = parseInt(y);
 
@@ -278,18 +312,16 @@ const localLogic = {
             return { mineHit: true };
 
         } else if (this.field[x][y] === false) {
-            return { mineHit: false, minesAround: this.minesAround(x, y) };
+            if (this.minesAround(x, y) === 0) {
+                return { mineHit: false, minesAround: this.minesAround(x, y), emptyCells: this.emptyCells(x, y) };
+            }
+            return { mineHit: false, minesAround: this.minesAround(x, y), emptyCells: undefined };
         }
 
     },
 
     minesAround: function (x, y) {
         // This function returns the number of mines around a cell
-        // It takes the coordinates of the cell as parameters
-
-        // Checks for mines in the surrounding cells of the cell
-
-        
 
         let mines = 0;
 
@@ -316,6 +348,30 @@ const localLogic = {
             return false; // If the cell is inside the field, return false
         }
     },
+
+    emptyCells: function (x, y) {
+        // This function returns a list of empty cells around a empty cell
+
+        let emptyCells = [];
+
+        for (let delX = -1; delX <= 1; delX++) {
+
+            for (let delY = -1; delY <= 1; delY++) {
+
+                if (this.cellOutsideField(x + delX, y + delY)) {
+                    continue; // If the cell is outside the field, skip it
+                }
+
+                if (this.field[x + delX][y + delY] === false && this.minesAround(x + delX, y + delY) === 0) {
+                    emptyCells.push({ x: x + delX, y: y + delY });
+                }
+            }
+        }
+
+        return emptyCells;
+    },
+
+
 
     placeMines: function (x, y) {
         // This function places the mines on the field
