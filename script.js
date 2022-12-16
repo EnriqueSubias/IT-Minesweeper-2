@@ -250,15 +250,20 @@ const localLogic = {
 
         console.log(this.movesCounter + ' moves made');
 
-        if (this.movesCounter === 0) {
+        if (this.movesCounter === 0) { // If this is the first move
             this.placeMines(x, y);
         }
 
+        this.movesCounter += 1;
+
         // RETURN VALUES
         // The game object should return:
+
         // • whether the sweep hits a mine
         //      -   if mine: list of all mines
+
         // • if the user has won the game
+
         // • the number of mines around
         //      -   if no other mines around: a list of empty cells
 
@@ -275,44 +280,6 @@ const localLogic = {
             });
             return result;
         }
-
-        // // If the cell is already uncovered, do nothing
-        // if (this.field[x][y] === 'uncovered') {
-        //     return;
-        // }
-
-        // // If the cell is flagged, do nothing
-        // if (this.field[x][y] === 'flagged') {
-        //     return;
-        // }
-
-        // // If the cell is a mine, uncover all mines and end the game
-        // if (this.field[x][y] === true) {
-        //     this.uncoverAllMines();
-        //     this.gameOver();
-        //     return;
-        // }
-
-
-        // // If the cell is empty, uncover it and all empty cells around it
-        // if (this.field[x][y] === false) {
-        //     this.uncoverEmptyCells(x, y);
-        // }
-
-        // // If the cell is a number, uncover it
-        // if (typeof this.field[x][y] === 'number') {
-        //     this.uncoverCell(x, y);
-        // }
-
-
-        // // If the user has uncovered all cells that are not mines, the user has won the game
-        // if (this.uncoveredCells === this.size * this.size - this.numberOfMines) {
-        //     this.gameWon();
-        // }
-
-
-
-        this.movesCounter++;
     },
 
     placeMines: function (x, y) {
