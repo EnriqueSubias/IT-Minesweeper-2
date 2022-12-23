@@ -68,7 +68,7 @@ const minesweeper = { // Avoids polluting the global namespace
             this.logic.init(this.size, this.mines)
         });
 
-        // // Default game on first load
+        // Default game on first load
         this.newGame("small");
         this.logic.init(this.size, this.mines)
 
@@ -118,14 +118,8 @@ const minesweeper = { // Avoids polluting the global namespace
     // Starts a new game
     newGame: function (size) {
         this.generatePlayfield(size);
-        // Left click uncovers a cell
-        // Right click flags a cell (doesnt affect game logic because it's just a visual aid)
-
-        // The program handles all clicks in a single callback per click type (Because each cell has data-x and data-y coordinates).
-
-        // Left click and right click have different functions so the program handles them in separate callbacks.
+        // The program handles all clicks in a single callback per click type (Since each cell has data-x and data-y coordinates).
     },
-
 
     // Starts a new game and then initializes the playfield with the given size
     generatePlayfield: function (size) {
@@ -167,7 +161,6 @@ const minesweeper = { // Avoids polluting the global namespace
         cell.addEventListener('contextmenu', (event) => {
             this.cellRightClick(event);
         });
-
 
         return cell;
     },
@@ -265,29 +258,18 @@ const minesweeper = { // Avoids polluting the global namespace
 
         if (this.debug) console.log('Right click on cell ' + x + ',' + y + ' detected');
 
-        this.placeFlag(x, y);
+        this.toggleFlag(x, y);
     },
 
-    placeFlag: function (x, y) {
+    toggleFlag: function (x, y) {
         const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
-        cell.className = 'cell';
-
-        //if (cell.className.includes('covered') === true) {
-        if (cell.className.includes('cell-symbol-flag') === false) {
-            cell.className += ' covered';
-            cell.className += ' cell-symbol-flag';
-            return;
-
-        } else { // Removes the flag if already flagged
-            cell.className += ' covered';
-            cell.className = cell.className.replace('cell-symbol-flag', '');
-            return;
+        if (cell.classList.contains('covered')) {
+            if (cell.classList.contains('cell-symbol-flag')) {
+                cell.classList.remove('cell-symbol-flag');
+            } else {
+                cell.className += ' cell-symbol-flag';
+            }
         }
-
-        // } else {
-        //     console.log('Cell is already uncovered, cannot flag it')
-        //     return; // The cell has to be covered to be flagged
-        // }
     },
 
     init: function () {
@@ -560,7 +542,7 @@ const localLogic = {
             }
         }
 
-        if (minesweeper.debug) console.dir(this.field); // TODO: Remove this line for production
+        if (minesweeper.debug) console.dir(this.field);
 
     },
 
