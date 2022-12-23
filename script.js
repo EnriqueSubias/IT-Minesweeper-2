@@ -4,7 +4,7 @@ window.addEventListener("load", () => {
 
 const minesweeper = { // Avoids polluting the global namespace
 
-    debug: true, // Set to true to enable console messages
+    debug: false, // Set to true to enable console messages
 
     gameTypes: [
         { name: 'small', size: 9, mines: 10 },
@@ -200,7 +200,6 @@ const minesweeper = { // Avoids polluting the global namespace
         const textHolder = document.createElement('div');
         overlay.appendChild(textHolder);
         textHolder.innerText = message;
-
     },
 
     revealAllMines: function (minesList) {
@@ -208,9 +207,7 @@ const minesweeper = { // Avoids polluting the global namespace
         for (let i = 0; i < minesList.length; i++) {
             const x = minesList[i].x;
             const y = minesList[i].y;
-
             const result = this.logic.sweep(x, y);
-
             this.placeSymbol(result, x, y);
         }
     },
@@ -305,8 +302,6 @@ const minesweeper = { // Avoids polluting the global namespace
 const localLogic = {
     // Minesweeper local game logic
 
-    // GAME END Criteria
-
     //The game ends,
     // • when the user has uncovered all cells without a mine
     // • or has hit a mine
@@ -315,11 +310,7 @@ const localLogic = {
     // If it equals the total number of cells minus the mine count, the user has won.
 
     sweep: function (x, y) {
-        // This function sweeps the field for mines
-        // It returns the number of mines in the surrounding cells
-        // It also returns the number of covered cells in the surrounding cells
-        // It also returns the number of flagged cells in the surrounding cells
-        // This function is called when a cell is uncovered
+        // This function sweeps the field for mines and is called when a cell is uncovered
 
         x = parseInt(x);
         y = parseInt(y);
@@ -331,17 +322,6 @@ const localLogic = {
         }
 
         this.movesCounter += 1;
-
-        // RETURN VALUES
-        // The game object should return:
-
-        // • whether the sweep hits a mine
-        //      -   if mine: list of all mines
-
-        // • if the user has won the game
-
-        // • the number of mines around
-        //      -   if no other mines around: a list of empty cells
 
         this.uncoveredCells[x][y] = true; // Marks the cell as uncovered
         if (minesweeper.debug) console.log('1 cell uncovered');
@@ -370,8 +350,7 @@ const localLogic = {
     },
 
     collectMines: function () {
-        // This function collects all mines in the field
-        // It returns a list of all mines
+        // This function collects all mines in the field and returns them as a list
         let minesList = [];
 
         for (let i = 0; i < this.field.length; i++) {
@@ -387,7 +366,7 @@ const localLogic = {
 
     checkWin: function () {
         // This function checks if the user has won the game
-        // It returns true if the user has won, false if not
+        // Returns true if the user has won, false if not
         let coveredCells = 0;
 
         for (let i = 0; i < this.field.length; i++) {
@@ -451,12 +430,8 @@ const localLogic = {
     },
 
     getEmptyCells: function (x, y) {
-        // This function returns a list called done of cells around a empty cell,
+        // This function returns a list of cells around a empty cell,
         // which have no mines around or are neighbours of cells with no mines around
-
-        // The logic uses 2 lists:
-        //  - a toDo list with all cells to examine for empty neighbours
-        //  - a done list with all cells already examined (to avoid to examine it again)
 
         let toDo = [];
         let done = [];
