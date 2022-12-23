@@ -61,6 +61,7 @@ header {
     flex-wrap: wrap;
     justify-content: space-between;
     align-content: space-between;
+    position: relative;
 }
 
 .cell {
@@ -147,6 +148,37 @@ header {
     background-size: 1000%;
     background-repeat: no-repeat;
     background-position: 100% 50%;
+}
+
+.mineHit {
+    background-color: rgb(255, 60, 60);
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.overlay>div {
+    background-color: white;
+    outline: 2px solid black;
+    font-size: 4em;
+    padding: 0.5em;
+    border-radius: 10px;
+    font-family: 'Menlo', monospace;
+    flex-shrink: 0;
+}
+
+#playfield:not(:hover) .overlay {
+    display: none;
 }
 
 

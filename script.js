@@ -1,10 +1,10 @@
-
 window.addEventListener("load", () => {
     minesweeper.init();
 });
 
-
 const minesweeper = { // Avoids polluting the global namespace
+
+    debug: true, // Set to true to enable console messages
 
     gameTypes: [
         { name: 'small', size: 9, mines: 10 },
@@ -107,8 +107,10 @@ const minesweeper = { // Avoids polluting the global namespace
                 this.size = this.gameTypes[game].size;
                 this.mines = this.gameTypes[game].mines;
 
-                console.log(this.gameTypes[game].name + ' game type selected')
-                console.log(this.gameTypes[game])
+                if (this.debug) {
+                    console.log(this.gameTypes[game].name + ' game type selected')
+                    console.log(this.gameTypes[game])
+                }
             }
         }
     },
@@ -130,7 +132,7 @@ const minesweeper = { // Avoids polluting the global namespace
 
         this.gameType(size);
 
-        console.log('Generating playfield of size ' + this.size + 'x' + this.size + ' with ' + this.mines + ' mines')
+        if (this.debug) console.log('Generating playfield of size ' + this.size + 'x' + this.size + ' with ' + this.mines + ' mines')
 
         const playfield = document.querySelector('#playfield'); // Finds the playfield div
 
@@ -176,12 +178,48 @@ const minesweeper = { // Avoids polluting the global namespace
         const y = event.target.dataset.y;
         event.preventDefault(); // Prevents this trigger from also triggering the right click event
 
-        console.log('Left click on cell ' + x + ',' + y + ' detected');
+        if (this.debug) console.log('Left click on cell ' + x + ',' + y + ' detected');
 
         const result = this.logic.sweep(x, y);
-        console.dir(result);
+        if (this.debug) console.dir(result);
 
         this.placeSymbol(result, x, y);
+
+        if (result.lose === true) {
+            this.revealAllMines(result.minesList);
+            event.target.classList.add('mineHit');
+            this.displayOverlay('You lose');
+        }
+
+        if (result.win === true) {
+            this.displayOverlay('You win');
+        }
+    },
+
+    displayOverlay: function (message) {
+        const playfield = document.querySelector('#playfield');
+
+        const overlay = document.createElement('div');
+        playfield.appendChild(overlay);
+        // set a class to the overlay
+        overlay.className = 'overlay';
+
+        const textHolder = document.createElement('div');
+        overlay.appendChild(textHolder);
+        textHolder.innerText = message;
+
+    },
+
+    revealAllMines: function (minesList) {
+        // Uncovers all mines in the playfield, used when the player loses
+        for (let i = 0; i < minesList.length; i++) {
+            const x = minesList[i].x;
+            const y = minesList[i].y;
+
+            const result = this.logic.sweep(x, y);
+
+            this.placeSymbol(result, x, y);
+        }
     },
 
     placeSymbol: function (result, x, y) {
@@ -225,7 +263,7 @@ const minesweeper = { // Avoids polluting the global namespace
         const y = event.target.dataset.y;
         event.preventDefault(); // Prevents this trigger from also triggering the right click event
 
-        console.log('Right click on cell ' + x + ',' + y + ' detected');
+        if (this.debug) console.log('Right click on cell ' + x + ',' + y + ' detected');
 
         this.placeFlag(x, y);
     },
@@ -285,6 +323,15 @@ const minesweeper = { // Avoids polluting the global namespace
 const localLogic = {
     // Minesweeper local game logic
 
+    // GAME END Criteria
+
+    //The game ends,
+    // • when the user has uncovered all cells without a mine
+    // • or has hit a mine
+
+    // So the App has to track the number of uncovered cells.
+    // If it equals the total number of cells minus the mine count, the user has won.
+
     sweep: function (x, y) {
         // This function sweeps the field for mines
         // It returns the number of mines in the surrounding cells
@@ -295,7 +342,7 @@ const localLogic = {
         x = parseInt(x);
         y = parseInt(y);
 
-        console.log(this.movesCounter + ' moves made');
+        if (minesweeper.debug) console.log(this.movesCounter + ' moves made');
 
         if (this.movesCounter === 0) { // If this is the first move
             this.placeMines(x, y);
@@ -314,22 +361,87 @@ const localLogic = {
         // • the number of mines around
         //      -   if no other mines around: a list of empty cells
 
+        this.uncoveredCells[x][y] = true; // Marks the cell as uncovered
+        if (minesweeper.debug) console.log('1 cell uncovered');
 
         if (this.field[x][y] === true) {
-            return { mineHit: true };
+            return { mineHit: true, minesList: this.collectMines(), lose: true };
 
         } else if (this.field[x][y] === false) {
             if (this.countMinesAround(x, y) > 0) {
+                if (this.checkWin() === true) {
+                    return { mineHit: false, minesAround: this.countMinesAround(x, y), emptyCells: undefined, win: true };
+                }
                 return { mineHit: false, minesAround: this.countMinesAround(x, y), emptyCells: undefined };
             }
-            return { mineHit: false, minesAround: this.countMinesAround(x, y), emptyCells: this.getEmptyCells(x, y) };
+
+            emtpyCellsList = this.getEmptyCells(x, y)
+            let num = this.uncoverMultipleCells(emtpyCellsList);
+            if (minesweeper.debug) console.log(num + ' cells uncovered');
+
+            if (this.checkWin() === true) {
+                return { mineHit: false, minesAround: this.countMinesAround(x, y), emptyCells: emtpyCellsList, win: true };
+            }
+            return { mineHit: false, minesAround: this.countMinesAround(x, y), emptyCells: emtpyCellsList };
         }
 
     },
 
+    collectMines: function () {
+        // This function collects all mines in the field
+        // It returns a list of all mines
+        let minesList = [];
+
+        for (let i = 0; i < this.field.length; i++) {
+            for (let j = 0; j < this.field[i].length; j++) {
+                if (this.field[i][j] == true) {
+                    minesList.push({ x: i, y: j });
+                }
+            }
+        }
+
+        return minesList;
+    },
+
+    checkWin: function () {
+        // This function checks if the user has won the game
+        // It returns true if the user has won, false if not
+        let coveredCells = 0;
+
+        for (let i = 0; i < this.field.length; i++) {
+            for (let j = 0; j < this.field[i].length; j++) {
+                if (this.uncoveredCells[i][j] === false) {
+                    coveredCells += 1;
+                }
+            }
+        }
+
+        if (coveredCells === this.numberOfMines) {
+            return true;
+        } else {
+            return false;
+        }
+    },
+
+    uncoverMultipleCells: function (emptyCellsList) {
+        // This function uncovers multiple cells at once
+        // It returns the number of uncovered cells
+        let num = 0;
+
+        for (let i = 0; i < emptyCellsList.length; i++) {
+            let x = emptyCellsList[i].x;
+            let y = emptyCellsList[i].y;
+
+            if (this.uncoveredCells[x][y] === false) {
+                this.uncoveredCells[x][y] = true;
+                num += 1;
+            }
+        }
+        return num;
+    },
+
     countMinesAround: function (x, y) {
         // This function returns the number of mines around a cell
-
         let mines = 0;
 
         for (let delX = -1; delX <= 1; delX++) {
@@ -448,7 +560,7 @@ const localLogic = {
             }
         }
 
-        console.dir(this.field); // TODO: Remove this line for production
+        if (minesweeper.debug) console.dir(this.field); // TODO: Remove this line for production
 
     },
 
@@ -466,8 +578,23 @@ const localLogic = {
                 this.field[i][j] = false; // False means no mine
             }
         }
+        if (minesweeper.debug) {
+            console.log('Field initialized: ')
+            console.dir(this.field);
+        }
 
-        console.dir(this.field);
+        // uncoveredCells array of the size of the field
+        this.uncoveredCells = new Array(this.size);
+        for (let i = 0; i < this.size; i++) {
+            this.uncoveredCells[i] = new Array(this.size);
+            for (let j = 0; j < this.size; j++) {
+                this.uncoveredCells[i][j] = false; // False means the cell is covered
+            }
+        }
+        if (minesweeper.debug) {
+            console.log('Uncovered cells initialized: ')
+            console.dir(this.uncoveredCells);
+        }
 
         // Delay the initialization of the mines until the first click
 
