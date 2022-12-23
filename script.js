@@ -190,23 +190,30 @@ const minesweeper = { // Avoids polluting the global namespace
 
         // remove class covered
         cell.className = cell.className.replace('covered', '');
-        cell.className += ' uncovered';
 
         if (result.mineHit === true) {
             cell.className += ' cell-symbol-bomb';
         }
         if (result.mineHit === false) {
-            if (result.cellsAround === undefined) {
-                cell.className += ' cell-symbol-' + result.minesAround;
-            } else {
-                for (let i = 0; i < result.cellsAround.length; i++) {
-                    const cell = document.querySelector(`[data-x="${result.cellsAround[i].x}"][data-y="${result.cellsAround[i].y}"]`);
-                    cell.className = 'cell';
+            if (result.minesAround === 0) {
+
+                for (let i = 0; i < result.emptyCells.length; i++) {
+                    let neighbourCell = document.querySelector(`[data-x="${result.emptyCells[i].x}"][data-y="${result.emptyCells[i].y}"]`);
+                    neighbourCell.className = 'cell';
                     // remove class covered
-                    cell.className = cell.className.replace('covered', '');
-                    cell.className += ' uncovered';
-                    cell.className += ' cell-symbol-' + result.cellsAround[i].minesAround;
+                    neighbourCell.className = neighbourCell.className.replace('covered', '');
+                    neighbourCell.className += ' cell-symbol-' + result.emptyCells[i].minesAround;
+
+                    if (result.emptyCells[i].minesAround === 0) {
+                        neighbourCell.className += ' cell-symbol-0';
+                    }
+                    else {
+                        neighbourCell.className += ' cell-symbol-' + result.emptyCells[i].minesAround;
+                    }
                 }
+            }
+            else {
+                cell.className += ' cell-symbol-' + result.minesAround;
             }
         }
 
@@ -312,15 +319,15 @@ const localLogic = {
             return { mineHit: true };
 
         } else if (this.field[x][y] === false) {
-            if (this.minesAround(x, y) === 0) {
-                return { mineHit: false, minesAround: this.minesAround(x, y), emptyCells: this.emptyCells(x, y) };
+            if (this.countMinesAround(x, y) > 0) {
+                return { mineHit: false, minesAround: this.countMinesAround(x, y), emptyCells: undefined };
             }
-            return { mineHit: false, minesAround: this.minesAround(x, y), emptyCells: undefined };
+            return { mineHit: false, minesAround: this.countMinesAround(x, y), emptyCells: this.getEmptyCells(x, y) };
         }
 
     },
 
-    minesAround: function (x, y) {
+    countMinesAround: function (x, y) {
         // This function returns the number of mines around a cell
 
         let mines = 0;
@@ -349,29 +356,70 @@ const localLogic = {
         }
     },
 
-    emptyCells: function (x, y) {
-        // This function returns a list of empty cells around a empty cell
+    getEmptyCells: function (x, y) {
+        // This function returns a list called done of cells around a empty cell,
+        // which have no mines around or are neighbours of cells with no mines around
 
-        let emptyCells = [];
+        // The logic uses 2 lists:
+        //  - a toDo list with all cells to examine for empty neighbours
+        //  - a done list with all cells already examined (to avoid to examine it again)
 
+        let toDo = [];
+        let done = [];
+        toDo.push({ x: x, y: y, minesAround: 0 }); // Adds the first cell to the toDo list
+
+        while (toDo.length != 0) { // While there are cells in the toDo list
+            let currentCell = toDo.pop(); // Get the current cell from the end of the toDo list
+            done.push(currentCell); // Add the current cell to the done list
+
+            // Get a list of all neighbours of the current cell
+            let neighbours = this.getNeighboursOf(currentCell.x, currentCell.y);
+
+            // Loop through all neighbours
+            for (let i = 0; i < neighbours.length; i++) {
+                // If the neighbour is already in the done list, skip it
+                if (this.cellInList(neighbours[i].x, neighbours[i].y, done)) {
+                    continue;
+                }
+                // If the neighbour has mines around, add it to the done list
+                if (neighbours[i].minesAround > 0) {
+                    done.push(neighbours[i]);
+                } else {
+                    // If the neighbour has no mines around, add it to the toDo list
+                    toDo.push(neighbours[i]);
+                }
+            }
+        }
+        return done;
+    },
+
+    getNeighboursOf: function (x, y) {
+        // This function returns a list of all neighbours of a cell
+        let neighbours = [];
         for (let delX = -1; delX <= 1; delX++) {
-
             for (let delY = -1; delY <= 1; delY++) {
 
                 if (this.cellOutsideField(x + delX, y + delY)) {
                     continue; // If the cell is outside the field, skip it
                 }
-
-                if (this.field[x + delX][y + delY] === false && this.minesAround(x + delX, y + delY) === 0) {
-                    emptyCells.push({ x: x + delX, y: y + delY });
+                if (delX === 0 && delY === 0) {
+                    continue; // If the cell is the current cell, skip it
                 }
+                neighbours.push({ x: x + delX, y: y + delY, minesAround: this.countMinesAround(x + delX, y + delY) });
             }
         }
-
-        return emptyCells;
+        return neighbours;
     },
 
-
+    cellInList: function (x, y, list) {
+        // This function checks if a cell is in a list
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].x === x && list[i].y === y) {
+                return true;
+            }
+        }
+        return false;
+    },
 
     placeMines: function (x, y) {
         // This function places the mines on the field
